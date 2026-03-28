@@ -265,10 +265,10 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                                     type="text"
                                     value={key4uConfig.imageModel || ''}
                                     onChange={(e) => setKey4uConfig({ ...key4uConfig, imageModel: e.target.value })}
-                                    placeholder="Để trống để dùng model mặc định của app, hoặc nhập tên model (vd: dall-e-3, flux)"
+                                    placeholder="Để trống để dùng dall-e-3, hoặc nhập tên model (vd: flux, midjourney)"
                                     className="w-full bg-white dark:bg-black/20 border border-gray-300 dark:border-gray-700 p-2 rounded text-xs outline-none focus:ring-1 focus:ring-green-500"
                                 />
-                                <p className="text-[10px] text-gray-400">Nếu để trống, app sẽ gửi tên model Gemini đang chọn. Nếu Key4U báo lỗi "not supported model", hãy nhập tên model mà Key4U hỗ trợ (ví dụ: dall-e-3, flux).</p>
+                                <p className="text-[10px] text-gray-400">Nếu để trống, app sẽ gửi tên model <b>dall-e-3</b>. Nếu Key4U báo lỗi "not supported model", hãy nhập tên model mà Key4U hỗ trợ (ví dụ: flux, midjourney).</p>
                             </div>
                             <p className="text-[9px] text-gray-500 italic">Lưu ý: Khi bật Key4U, hệ thống sẽ ưu tiên dùng Key4U thay vì Gemini API.</p>
                         </div>

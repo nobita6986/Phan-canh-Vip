@@ -382,7 +382,7 @@ export default function App() {
           endpoint += '/images/generations';
       }
       
-      const targetModel = key4uConfig.imageModel || model;
+      const targetModel = key4uConfig.imageModel || 'dall-e-3';
 
       let size = "1024x1024";
       if (aspectRatio === "16:9") size = "1792x1024";
