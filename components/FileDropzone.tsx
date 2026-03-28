@@ -8,6 +8,7 @@ interface FileDropzoneProps {
   className?: string;
   dropMessage?: string;
   disableClick?: boolean;
+  onError?: (msg: string) => void;
 }
 
 export const FileDropzone: React.FC<FileDropzoneProps> = ({ 
@@ -16,7 +17,8 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
   children, 
   className, 
   dropMessage = 'Thả tệp vào đây',
-  disableClick = false 
+  disableClick = false,
+  onError
 }) => {
   const [isDragActive, setIsDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +59,11 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
     if (validFiles.length > 0) {
       onDrop(validFiles);
     } else {
-      alert(`Không có tệp hợp lệ. Vui lòng chọn các tệp có định dạng: ${accept}`);
+      if (onError) {
+        onError(`Không có tệp hợp lệ. Vui lòng chọn các tệp có định dạng: ${accept}`);
+      } else {
+        console.warn(`Không có tệp hợp lệ. Vui lòng chọn các tệp có định dạng: ${accept}`);
+      }
     }
   };
 

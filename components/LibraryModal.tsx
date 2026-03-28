@@ -33,13 +33,24 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, onL
     }
   };
 
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+
   const deleteSession = (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phiên làm việc này? Hành động này không thể hoàn tác.')) {
-      const newSessions = sessions.filter(s => s.id !== id);
+    setSessionToDelete(id);
+  };
+
+  const confirmDeleteSession = () => {
+    if (sessionToDelete) {
+      const newSessions = sessions.filter(s => s.id !== sessionToDelete);
       setSessions(newSessions);
       localStorage.setItem('studyo_sessions', JSON.stringify(newSessions));
       showToast('Đã xóa phiên làm việc.', 'info');
+      setSessionToDelete(null);
     }
+  };
+
+  const cancelDeleteSession = () => {
+    setSessionToDelete(null);
   };
 
   const handleDownloadScript = (session: SavedSession) => {
@@ -141,6 +152,29 @@ export const LibraryModal: React.FC<LibraryModalProps> = ({ isOpen, onClose, onL
           )}
         </div>
       </div>
+
+      {sessionToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-[#0a1911] rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-gray-200 dark:border-[#1f4d3a] animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-green-400 mb-2">Xác nhận xóa</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">Bạn có chắc chắn muốn xóa phiên làm việc này? Hành động này không thể hoàn tác.</p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={cancelDeleteSession}
+                className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f4d3a] rounded-lg transition-colors"
+              >
+                Hủy
+              </button>
+              <button 
+                onClick={confirmDeleteSession}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

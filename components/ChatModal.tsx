@@ -16,6 +16,7 @@ interface ChatModalProps {
   isAiReplying: boolean;
   onPresentScript: () => void;
   generateContentUnified: (model: string, systemInstruction: string, userContent: string, keyIdx?: number) => Promise<string>;
+  showToast?: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
 }
 
 export const ChatModal: React.FC<ChatModalProps> = ({
@@ -27,6 +28,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
   isAiReplying,
   onPresentScript,
   generateContentUnified,
+  showToast,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
@@ -83,7 +85,11 @@ export const ChatModal: React.FC<ChatModalProps> = ({
       setAnalyzedCharacters(characterList);
     } catch (error) {
         console.error("Character analysis failed:", error);
-        alert("Không thể phân tích nhân vật từ kịch bản. Vui lòng nhập thủ công.");
+        if (showToast) {
+            showToast("Không thể phân tích nhân vật từ kịch bản. Vui lòng nhập thủ công.", 'warning');
+        } else {
+            alert("Không thể phân tích nhân vật từ kịch bản. Vui lòng nhập thủ công.");
+        }
         setAnalyzedCharacters([]);
     } finally {
         setIsAnalyzingCharacters(false);

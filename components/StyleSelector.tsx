@@ -9,9 +9,10 @@ interface StyleSelectorProps {
   onSelectStyle: (style: Style) => void;
   aspectRatio: AspectRatio;
   setAspectRatio: (ratio: AspectRatio) => void;
+  showToast: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
 }
 
-export const StyleSelector: React.FC<StyleSelectorProps> = ({ onSelectStyle, aspectRatio, setAspectRatio }) => {
+export const StyleSelector: React.FC<StyleSelectorProps> = ({ onSelectStyle, aspectRatio, setAspectRatio, showToast }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStyleIndex, setSelectedStyleIndex] = useState<number>(0);
   const [customPrompt, setCustomPrompt] = useState('');
@@ -30,7 +31,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onSelectStyle, asp
   const handleConfirm = () => {
     if (showCustom) {
       if (!customPrompt.trim()) {
-        alert('Vui lòng nhập prompt phong cách.');
+        showToast('Vui lòng nhập prompt phong cách.', 'warning');
         return;
       }
       onSelectStyle({

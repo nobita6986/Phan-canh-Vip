@@ -122,6 +122,8 @@ const attemptKey4UGeneration = async (
 
 import { PromoPopup } from '@/components/PromoPopup';
 
+import { ConfirmModal } from '../components/ConfirmModal';
+
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([{ name: '', images: [], stylePrompt: '' }]);
   const [selectedStyle, setSelectedStyle] = useState<Style | null>(null);
@@ -137,7 +139,7 @@ export default function App() {
   const [isProcessingScript, setIsProcessingScript] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [currentSessionId, setCurrentSessionId] = useState<string>(() => Date.now().toString());
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => Date.now().toString() + Math.random().toString(36).substring(2, 9));
   
   // Model xử lý văn bản (Text Model)
   const [selectedModel, setSelectedModel] = useState<GeminiModel>(() => {
@@ -165,6 +167,12 @@ export default function App() {
   });
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void}>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
     const saved = localStorage.getItem('user_api_keys');
     return saved ? JSON.parse(saved) : [];
@@ -246,7 +254,7 @@ export default function App() {
   }, [tableData, currentSessionId]);
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Date.now().toString();
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
   }, []);
 
@@ -508,7 +516,7 @@ export default function App() {
     setIsProcessingScript(true);
     
     // Tạo session ID mới khi upload script mới
-    setCurrentSessionId(Date.now().toString());
+    setCurrentSessionId(Date.now().toString() + Math.random().toString(36).substring(2, 9));
 
     const runProcessing = async (keyIdx = 0): Promise<void> => {
         try {
@@ -545,7 +553,7 @@ LƯU Ý: Chỉ trả về mảng JSON hợp lệ, không thêm văn bản thừa
 
                 newTableData = scenes.map((scene: any, index: number) => {
                     const stt = scene.stt || String(index + 1);
-                    const id = parseInt(String(stt).replace(/[^0-9]/g, ''), 10) || (index + 1);
+                    const id = Date.now() + index;
                     return {
                         id,
                         originalRow: [stt, scene.ngonNguGoc || '', scene.tiengViet || '', scene.tomTat || '', scene.prompt || ''],
@@ -580,7 +588,7 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
 
                 newTableData = tableRows.map((cols, index) => {
                     const stt = cols[0] || String(index + 1);
-                    const id = parseInt(String(stt).replace(/[^0-9]/g, ''), 10) || (index + 1);
+                    const id = Date.now() + index;
                     return {
                         id,
                         originalRow: [stt, cols[1] || '', cols[2] || '', cols[3] || '', cols[4] || ''],
@@ -682,9 +690,21 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
     }
 
     if (isRegenerate && rowsToProcess.length > 5) {
-        if (!window.confirm(`Bạn có chắc chắn muốn tạo lại ảnh cho toàn bộ ${rowsToProcess.length} phân cảnh không? Việc này sẽ tiêu tốn tài nguyên.`)) {
-            return;
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: 'Xác nhận tạo lại',
+            message: `Bạn có chắc chắn muốn tạo lại ảnh cho toàn bộ ${rowsToProcess.length} phân cảnh không? Việc này sẽ tiêu tốn tài nguyên.`,
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                showToast(`Bắt đầu tạo ${rowsToProcess.length} ảnh...`, 'info');
+                for (const row of rowsToProcess) {
+                    await generateImage(row.id);
+                    await delay(5000 + Math.random() * 2000); 
+                }
+                showToast('Hoàn tất quy trình tạo ảnh hàng loạt.', 'success');
+            }
+        });
+        return;
     }
 
     showToast(`Bắt đầu tạo ${rowsToProcess.length} ảnh...`, 'info');
@@ -813,9 +833,14 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
   }, [tableData, showToast]);
 
   const handleResetApp = () => {
-      if (window.confirm("Bạn có chắc chắn muốn tải lại trang? Dữ liệu chưa lưu sẽ bị mất.")) {
-          window.location.reload();
-      }
+      setConfirmModal({
+          isOpen: true,
+          title: 'Xác nhận tải lại',
+          message: 'Bạn có chắc chắn muốn tải lại trang? Dữ liệu chưa lưu sẽ bị mất.',
+          onConfirm: () => {
+              window.location.reload();
+          }
+      });
   };
 
   const handleSendMessageToAI = async (prompt: string, keyIdx = 0) => {
@@ -960,12 +985,13 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
       </header>
       
       <main className="container mx-auto p-6">
-       <FileDropzone onDrop={(f) => handleInitiateScriptUpload(f[0])} accept=".txt,.docx" dropMessage="Tải kịch bản" disableClick={true}>
+       <FileDropzone onDrop={(f) => handleInitiateScriptUpload(f[0])} accept=".txt,.docx" dropMessage="Tải kịch bản" disableClick={true} onError={(msg) => showToast(msg, 'warning')}>
         {!selectedStyle ? ( 
             <StyleSelector 
                 onSelectStyle={handleStyleSelect} 
                 aspectRatio={aspectRatio}
                 setAspectRatio={setAspectRatio}
+                showToast={showToast}
             /> 
         ) : (
           <div className="space-y-6">
@@ -1061,8 +1087,15 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
         }} 
       />
 
-      <ChatModal isOpen={chatState === 'open'} onClose={() => setChatState('closed')} onMinimize={() => setChatState('minimized')} messages={chatMessages} onSendMessage={handleSendMessageToAI} isAiReplying={isAiReplying} onPresentScript={() => {}} generateContentUnified={generateContentUnified} />
+      <ChatModal isOpen={chatState === 'open'} onClose={() => setChatState('closed')} onMinimize={() => setChatState('minimized')} messages={chatMessages} onSendMessage={handleSendMessageToAI} isAiReplying={isAiReplying} onPresentScript={() => {}} generateContentUnified={generateContentUnified} showToast={showToast} />
       <PromoPopup />
+      <ConfirmModal 
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </>
   );
 }
