@@ -60,6 +60,7 @@ const getCharacterIndicesFromStt = (stt: string | number, characters: Character[
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const attemptKey4UGeneration = async (
+    model: string,
     systemInstruction: string,
     scriptText: string,
     apiKey: string,
@@ -89,7 +90,7 @@ const attemptKey4UGeneration = async (
     }
 
     const payload = {
-        model: "gpt-4o-mini",
+        model: model,
         messages: [
             { role: "system", content: systemInstruction },
             { role: "user", content: userContent }
@@ -373,11 +374,13 @@ export default function App() {
           endpoint += '/images/generations';
       }
       
+      const targetModel = key4uConfig.imageModel || model;
+
       let size = "1024x1024";
       if (aspectRatio === "16:9") size = "1792x1024";
       if (aspectRatio === "9:16") size = "1024x1792";
-      if (aspectRatio === "4:3") size = "1024x1024"; // dall-e-3 doesn't support 1024x768
-      if (aspectRatio === "3:4") size = "1024x1024"; // dall-e-3 doesn't support 768x1024
+      if (aspectRatio === "4:3") size = targetModel === 'dall-e-3' ? "1024x1024" : "1024x768";
+      if (aspectRatio === "3:4") size = targetModel === 'dall-e-3' ? "1024x1024" : "768x1024";
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -386,7 +389,7 @@ export default function App() {
           'Authorization': `Bearer ${key4uConfig.apiKey}`
         },
         body: JSON.stringify({
-          model: key4uConfig.imageModel || 'dall-e-3', // Use configured model or dall-e-3 fallback
+          model: targetModel,
           prompt: prompt,
           n: 1,
           size: size,
@@ -531,6 +534,7 @@ PROMPT: Viết prompt tiếng Anh chi tiết cho bối cảnh.
 LƯU Ý: Chỉ trả về mảng JSON hợp lệ, không thêm văn bản thừa.`;
 
                 const scenes = await attemptKey4UGeneration(
+                    selectedModel,
                     systemInstruction,
                     `Kịch bản thô: "${scriptText}"`,
                     key4uConfig.apiKey,
