@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import type { Style, AspectRatio } from '../types';
-import { STYLES } from '../constants';
+import type { Style, AspectRatio } from '@/src/types';
+import { STYLES } from '@/src/constants';
 import { CopyIcon } from './icons';
 import { Tooltip } from './Tooltip';
 

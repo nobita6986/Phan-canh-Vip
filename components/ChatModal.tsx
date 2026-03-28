@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import type { ChatMessage } from '../types';
-import { PRESET_PROMPT_SEGMENT, PRESET_PROMPT_CONTEXT } from '../constants';
+import type { ChatMessage } from '@/src/types';
+import { PRESET_PROMPT_SEGMENT, PRESET_PROMPT_CONTEXT } from '@/src/constants';
 import { ChatMessageContent } from './ChatMessageContent';
 import { LanguageSelectionModal } from './LanguageSelectionModal';
 import { CharacterSelectionModal } from './CharacterSelectionModal';

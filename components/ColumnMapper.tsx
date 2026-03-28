@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import type { ExcelRow, ColumnMapping, MappedColumn } from '../types';
+import type { ExcelRow, ColumnMapping, MappedColumn } from '@/src/types';
 
 interface ColumnMapperProps {
   excelData: ExcelRow[];

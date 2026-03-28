@@ -3,26 +3,26 @@ import React, { useState, useCallback, ChangeEvent, useEffect, useRef } from 're
 import { GoogleGenAI } from '@google/genai';
 import { STYLES, PRESET_PROMPT_CONTEXT } from './constants';
 import type { Style, Character, TableRowData, ExcelRow, AdjustmentOptions, ColumnMapping, ChatMessage, GeminiModel, ImageGenModel, AspectRatio, SavedSession, SavedSessionRow } from './types';
-import { StyleSelector } from './components/StyleSelector';
-import { CharacterManager } from './components/CharacterManager';
-import { ResultsView } from './components/ResultsView';
-import { ImageModal } from './components/ImageModal';
-import { SimpleImageModal } from './components/SimpleImageModal';
-import { RemakeModal } from './components/RemakeModal';
-import { ConfirmationModal } from './components/ConfirmationModal';
-import { createProjectAssetsZip, readExcelFile, createRowAssetsZip, exportVideoPromptsToExcel, exportImagePromptsToExcel, createFramesJsonWithImgAndPrompt, readTextFile, parseMarkdownTables, exportCleanScriptToTxt } from './utils/fileUtils';
-import { FileDropzone } from './components/FileDropzone';
-import { VersionHistoryModal } from './components/VersionHistoryModal';
-import { SunIcon, MoonIcon } from './components/icons';
-import { getPromptAndPartsForRow, getPromptForRow } from './utils/fileUtils';
-import { ChatModal } from './components/ChatModal';
-import { ApiKeyManager } from './components/ApiKeyManager';
-import { ScriptProcessingModal, SegmentationMethod } from './components/ScriptProcessingModal';
-import { Tooltip } from './components/Tooltip';
-import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { GuideModal } from './components/GuideModal';
-import { LibraryModal } from './components/LibraryModal';
-import { WelcomeModal } from './components/WelcomeModal';
+import { StyleSelector } from '@/components/StyleSelector';
+import { CharacterManager } from '@/components/CharacterManager';
+import { ResultsView } from '@/components/ResultsView';
+import { ImageModal } from '@/components/ImageModal';
+import { SimpleImageModal } from '@/components/SimpleImageModal';
+import { RemakeModal } from '@/components/RemakeModal';
+import { ConfirmationModal } from '@/components/ConfirmationModal';
+import { createProjectAssetsZip, readExcelFile, createRowAssetsZip, exportVideoPromptsToExcel, exportImagePromptsToExcel, createFramesJsonWithImgAndPrompt, readTextFile, parseMarkdownTables, exportCleanScriptToTxt } from '@/utils/fileUtils';
+import { FileDropzone } from '@/components/FileDropzone';
+import { VersionHistoryModal } from '@/components/VersionHistoryModal';
+import { SunIcon, MoonIcon } from '@/components/icons';
+import { getPromptAndPartsForRow, getPromptForRow } from '@/utils/fileUtils';
+import { ChatModal } from '@/components/ChatModal';
+import { ApiKeyManager } from '@/components/ApiKeyManager';
+import { ScriptProcessingModal, SegmentationMethod } from '@/components/ScriptProcessingModal';
+import { Tooltip } from '@/components/Tooltip';
+import { ToastContainer, ToastMessage, ToastType } from '@/components/Toast';
+import { GuideModal } from '@/components/GuideModal';
+import { LibraryModal } from '@/components/LibraryModal';
+import { WelcomeModal } from '@/components/WelcomeModal';
 
 const normalizeName = (name: string): string => {
   if (!name) return '';
@@ -119,7 +119,7 @@ const attemptKey4UGeneration = async (
     return JSON.parse(cleanedContent);
 };
 
-import { PromoPopup } from './components/PromoPopup';
+import { PromoPopup } from '@/components/PromoPopup';
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([{ name: '', images: [], stylePrompt: '' }]);

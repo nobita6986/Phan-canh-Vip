@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import type { Character, TableRowData, GeminiModel } from '../types';
-import { fileToBase64 } from '../utils/fileUtils';
+import type { Character, TableRowData, GeminiModel } from '@/src/types';
+import { fileToBase64 } from '@/utils/fileUtils';
 import { FileDropzone } from './FileDropzone';
 import { Tooltip } from './Tooltip';
 import { ToastType } from './Toast';

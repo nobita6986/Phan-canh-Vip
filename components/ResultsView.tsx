@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { Style, TableRowData, Character } from '../types';
+import type { Style, TableRowData, Character } from '@/src/types';
 import { ResultsTable } from './ResultsTable';
 import { FileDropzone } from './FileDropzone';
 import { ToastType } from './Toast';

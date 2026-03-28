@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import type { SavedSession, TableRowData } from '../types';
-import { exportCleanScriptToTxt, exportImagePromptsToExcel, exportVideoPromptsToExcel, convertSavedSessionToTableData } from '../utils/fileUtils';
+import type { SavedSession, TableRowData } from '@/src/types';
+import { exportCleanScriptToTxt, exportImagePromptsToExcel, exportVideoPromptsToExcel, convertSavedSessionToTableData } from '@/utils/fileUtils';
 import { ToastType } from './Toast';
 
 interface LibraryModalProps {

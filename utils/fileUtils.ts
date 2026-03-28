@@ -1,6 +1,6 @@
 
-import type { ExcelRow, TableRowData, Style, Character, SavedSessionRow } from '../types';
-import { ADJUSTMENT_OPTIONS } from '../constants';
+import type { ExcelRow, TableRowData, Style, Character, SavedSessionRow } from '@/src/types';
+import { ADJUSTMENT_OPTIONS } from '@/src/constants';
 
 // These are expected to be available globally from CDN scripts in index.html
 declare const XLSX: any;

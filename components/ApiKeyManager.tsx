@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import type { GeminiModel, ImageGenModel } from '../types';
+import type { GeminiModel, ImageGenModel } from '@/src/types';
 import { ToastType } from './Toast';
 
 interface ApiKeyManagerProps {

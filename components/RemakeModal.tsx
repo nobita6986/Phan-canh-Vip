@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { TableRowData, Character, AdjustmentOptions } from '../types';
-import { ADJUSTMENT_OPTIONS } from '../constants';
+import type { TableRowData, Character, AdjustmentOptions } from '@/src/types';
+import { ADJUSTMENT_OPTIONS } from '@/src/constants';
 
 interface RemakeModalProps {
   rowData: TableRowData | null;

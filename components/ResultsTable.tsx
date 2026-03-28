@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import type { TableRowData, Character, Style } from '../types';
+import type { TableRowData, Character, Style } from '@/src/types';
 import { ResultRow } from './ResultRow';
 import { InfoIcon } from './icons';
 import { Tooltip } from './Tooltip';

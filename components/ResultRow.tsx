@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { TableRowData, Character, Style, ExcelRow } from '../types';
-import { getPromptForRow } from '../utils/fileUtils';
+import type { TableRowData, Character, Style, ExcelRow } from '@/src/types';
+import { getPromptForRow } from '@/utils/fileUtils';
 import { FileDropzone } from './FileDropzone';
 import { CopyIcon } from './icons';
 

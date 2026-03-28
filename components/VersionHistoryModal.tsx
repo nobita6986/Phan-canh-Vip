@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TableRowData } from '../types';
+import type { TableRowData } from '@/src/types';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;

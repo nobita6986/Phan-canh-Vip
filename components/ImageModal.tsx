@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { TableRowData } from '../types';
+import { TableRowData } from '@/src/types';
 
 interface ImageModalProps {
   viewData: { imageUrl: string; rowId: number } | null;
