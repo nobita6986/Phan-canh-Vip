@@ -169,10 +169,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [key4uConfig, setKey4uConfig] = useState<{ apiKey: string; baseUrl: string; enabled: boolean }>(() => {
+  const [key4uConfig, setKey4uConfig] = useState<{ apiKey: string; baseUrl: string; enabled: boolean; imageModel?: string }>(() => {
     const saved = localStorage.getItem('key4u_config');
     const parsed = saved ? JSON.parse(saved) : null;
-    return parsed ? { apiKey: parsed.apiKey || '', baseUrl: parsed.baseUrl || parsed.proxyUrl || 'https://api.key4u.shop/v1', enabled: parsed.enabled || false } : { apiKey: '', baseUrl: 'https://api.key4u.shop/v1', enabled: false };
+    return parsed ? { apiKey: parsed.apiKey || '', baseUrl: parsed.baseUrl || parsed.proxyUrl || 'https://api.key4u.shop/v1', enabled: parsed.enabled || false, imageModel: parsed.imageModel || 'dall-e-3' } : { apiKey: '', baseUrl: 'https://api.key4u.shop/v1', enabled: false, imageModel: 'dall-e-3' };
   });
 
   const [pendingScriptFile, setPendingScriptFile] = useState<File | null>(null);
@@ -376,8 +376,8 @@ export default function App() {
       let size = "1024x1024";
       if (aspectRatio === "16:9") size = "1792x1024";
       if (aspectRatio === "9:16") size = "1024x1792";
-      if (aspectRatio === "4:3") size = "1024x768";
-      if (aspectRatio === "3:4") size = "768x1024";
+      if (aspectRatio === "4:3") size = "1024x1024"; // dall-e-3 doesn't support 1024x768
+      if (aspectRatio === "3:4") size = "1024x1024"; // dall-e-3 doesn't support 768x1024
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -386,7 +386,7 @@ export default function App() {
           'Authorization': `Bearer ${key4uConfig.apiKey}`
         },
         body: JSON.stringify({
-          model: model,
+          model: key4uConfig.imageModel || 'dall-e-3', // Use configured model or dall-e-3 fallback
           prompt: prompt,
           n: 1,
           size: size,

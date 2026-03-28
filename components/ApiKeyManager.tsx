@@ -9,8 +9,8 @@ interface ApiKeyManagerProps {
   onClose: () => void;
   apiKeys: string[];
   setApiKeys: (keys: string[]) => void;
-  key4uConfig: { apiKey: string; baseUrl: string; enabled: boolean };
-  setKey4uConfig: (config: { apiKey: string; baseUrl: string; enabled: boolean }) => void;
+  key4uConfig: { apiKey: string; baseUrl: string; enabled: boolean; imageModel?: string };
+  setKey4uConfig: (config: { apiKey: string; baseUrl: string; enabled: boolean; imageModel?: string }) => void;
   selectedModel: GeminiModel;
   onSelectModel: (model: GeminiModel) => void;
   selectedImageModel: ImageGenModel;
@@ -258,6 +258,17 @@ export const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({
                                         Thử kết nối
                                     </button>
                                 </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Model Tạo Ảnh (Tùy chọn)</label>
+                                <input 
+                                    type="text"
+                                    value={key4uConfig.imageModel || 'dall-e-3'}
+                                    onChange={(e) => setKey4uConfig({ ...key4uConfig, imageModel: e.target.value })}
+                                    placeholder="dall-e-3"
+                                    className="w-full bg-white dark:bg-black/20 border border-gray-300 dark:border-gray-700 p-2 rounded text-xs outline-none focus:ring-1 focus:ring-green-500"
+                                />
+                                <p className="text-[10px] text-gray-400">Mặc định là dall-e-3. Bạn có thể đổi sang model khác nếu Key4U hỗ trợ (ví dụ: flux).</p>
                             </div>
                             <p className="text-[9px] text-gray-500 italic">Lưu ý: Khi bật Key4U, hệ thống sẽ ưu tiên dùng Key4U thay vì Gemini API.</p>
                         </div>
