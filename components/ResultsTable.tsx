@@ -16,6 +16,7 @@ interface ResultsTableProps {
   onGenerateAllVideoPrompts: () => void;
   onGenerateAllContextPrompts: () => void;
   onGenerateVideoPrompt: (rowId: number) => void;
+  onGenerateImagePrompt: (rowId: number) => void;
   onDownloadAll: () => void;
   onStartRemake: (row: TableRowData) => void;
   selectedStyle: Style;
@@ -40,6 +41,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   onOpenHistory, 
   onSendToVideo, 
   onGenerateVideoPrompt, 
+  onGenerateImagePrompt,
   defaultCharacterIndices,
   showToast
 }) => {
@@ -152,6 +154,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                 onUpdateRow={onUpdateRow} 
                 onGenerateImage={onGenerateImage} 
                 onGenerateVideoPrompt={onGenerateVideoPrompt} 
+                onGenerateImagePrompt={onGenerateImagePrompt}
                 selectedStyle={selectedStyle} 
                 onViewImage={onViewImage} 
                 onStartRemake={onStartRemake} 

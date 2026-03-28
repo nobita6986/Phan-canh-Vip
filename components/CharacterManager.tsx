@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import type { Character, TableRowData, GeminiModel } from '@/src/types';
 import { fileToBase64 } from '@/utils/fileUtils';
 import { FileDropzone } from './FileDropzone';
@@ -17,7 +16,7 @@ interface CharacterManagerProps {
   tableData: TableRowData[];
   selectedModel: GeminiModel;
   onAutoFillRows: () => void;
-  getAiInstance: () => { ai: GoogleGenAI, rotate: () => void };
+  generateContentUnified: (model: string, systemInstruction: string, userContent: string, keyIdx?: number) => Promise<string>;
   onViewImage: (url: string) => void;
   showToast: (message: string, type: ToastType) => void;
 }
@@ -32,7 +31,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
   tableData,
   selectedModel,
   onAutoFillRows,
-  getAiInstance,
+  generateContentUnified,
   onViewImage,
   showToast
 }) => {
@@ -80,16 +79,13 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({
     setIsDetecting(true);
     try {
       const scriptText = tableData.map(r => r.originalRow[2]).join(' ');
-      const { ai, rotate } = getAiInstance();
       const prompt = `Phân tích kịch bản sau và liệt kê danh sách các nhân vật chính (chỉ lấy tên hoặc danh xưng ngắn gọn, ví dụ: "Sara", "Người chồng", "Ông già"). Trả về danh sách phân tách bằng dấu phẩy. 
 Kịch bản: "${scriptText.substring(0, 3000)}"`;
       
-      const response = await ai.models.generateContent({
-        model: selectedModel.includes('pro') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
-        contents: prompt,
-      });
+      const modelToUse = selectedModel.includes('pro') ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+      const responseText = await generateContentUnified(modelToUse, '', prompt);
 
-      const names = response.text?.split(',').map(n => n.trim()).filter(n => n.length > 0) || [];
+      const names = responseText.split(',').map(n => n.trim()).filter(n => n.length > 0) || [];
       if (names.length === 0) {
         showToast('Không tìm thấy nhân vật rõ ràng trong kịch bản.', 'info');
       } else {

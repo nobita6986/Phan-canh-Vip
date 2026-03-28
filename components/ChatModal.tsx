@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import type { ChatMessage } from '@/src/types';
 import { PRESET_PROMPT_SEGMENT, PRESET_PROMPT_CONTEXT } from '@/src/constants';
 import { ChatMessageContent } from './ChatMessageContent';
@@ -16,6 +15,7 @@ interface ChatModalProps {
   onSendMessage: (prompt: string) => void;
   isAiReplying: boolean;
   onPresentScript: () => void;
+  generateContentUnified: (model: string, systemInstruction: string, userContent: string, keyIdx?: number) => Promise<string>;
 }
 
 export const ChatModal: React.FC<ChatModalProps> = ({
@@ -26,6 +26,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
   onSendMessage,
   isAiReplying,
   onPresentScript,
+  generateContentUnified,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
@@ -69,19 +70,11 @@ export const ChatModal: React.FC<ChatModalProps> = ({
     }
 
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API Key not configured.");
-      
-      const ai = new GoogleGenAI({ apiKey });
       const analysisPrompt = `From the following script, identify and list the main characters. Return ONLY a comma-separated list of names (e.g., John, Mary, David). Do not add any other text or formatting. Script: "${scriptContent}"`;
       
-      // Use gemini-3-flash-preview for basic text extraction tasks
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: analysisPrompt,
-      });
+      const responseText = await generateContentUnified('gemini-3-flash-preview', '', analysisPrompt);
 
-      const characterList = response.text
+      const characterList = responseText
         .trim()
         .split(',')
         .map(name => name.trim())

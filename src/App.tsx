@@ -290,11 +290,142 @@ export default function App() {
     console.log(`[AI Engine] Sử dụng Key: ${maskedKey}${baseUrl ? ` qua Base URL: ${baseUrl}` : ''}`);
     
     return {
-        ai: new GoogleGenAI({ apiKey: key, httpOptions: baseUrl ? { baseUrl: baseUrl } : undefined }),
+        ai: new GoogleGenAI({ apiKey: key }),
         keyCount: key4uConfig.enabled ? 1 : (apiKeys.length > 0 ? apiKeys.length : 1),
         currentIndex: keyIndex
     };
   }, [apiKeys, key4uConfig]);
+
+  const generateContentUnified = useCallback(async (
+    model: string,
+    systemInstruction: string,
+    userContent: any[],
+    keyIdx = 0
+  ) => {
+    if (key4uConfig.enabled && key4uConfig.apiKey) {
+      let endpoint = key4uConfig.baseUrl || 'https://api.key4u.shop/v1/chat/completions';
+      if (!endpoint.endsWith('/chat/completions')) {
+          endpoint = endpoint.replace(/\/+$/, '');
+          if (!endpoint.endsWith('/v1')) {
+              endpoint += '/v1';
+          }
+          endpoint += '/chat/completions';
+      }
+      const messages = [];
+      if (systemInstruction) {
+        messages.push({ role: "system", content: systemInstruction });
+      }
+      
+      let content = userContent;
+      if (Array.isArray(userContent)) {
+        content = userContent.map(part => {
+          if (part.text) return { type: "text", text: part.text };
+          if (part.inlineData) return { type: "image_url", image_url: { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` } };
+          return part;
+        });
+      }
+      messages.push({ role: "user", content });
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key4uConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          temperature: 0.7
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } else {
+      const { ai } = getAiInstance(keyIdx);
+      const parts = Array.isArray(userContent) ? userContent : [{ text: userContent }];
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: { role: 'user', parts },
+        config: systemInstruction ? { systemInstruction } : undefined
+      });
+      return response.text;
+    }
+  }, [key4uConfig, getAiInstance]);
+
+  const generateImageUnified = useCallback(async (
+    model: string,
+    prompt: string,
+    parts: any[],
+    aspectRatio: string,
+    keyIdx = 0
+  ) => {
+    if (key4uConfig.enabled && key4uConfig.apiKey) {
+      let endpoint = key4uConfig.baseUrl || 'https://api.key4u.shop/v1/images/generations';
+      if (!endpoint.endsWith('/images/generations')) {
+          endpoint = endpoint.replace(/\/+$/, '');
+          if (!endpoint.endsWith('/v1')) {
+              endpoint += '/v1';
+          }
+          endpoint += '/images/generations';
+      }
+      
+      let size = "1024x1024";
+      if (aspectRatio === "16:9") size = "1792x1024";
+      if (aspectRatio === "9:16") size = "1024x1792";
+      if (aspectRatio === "4:3") size = "1024x768";
+      if (aspectRatio === "3:4") size = "768x1024";
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key4uConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          prompt: prompt,
+          n: 1,
+          size: size,
+          response_format: "b64_json"
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.data[0].b64_json;
+    } else {
+      const { ai } = getAiInstance(keyIdx);
+      if (model.includes('imagen')) {
+         const response = await ai.models.generateImages({
+            model: model,
+            prompt: prompt,
+            config: {
+                numberOfImages: 1,
+                aspectRatio: aspectRatio, 
+                outputMimeType: 'image/jpeg'
+            }
+         });
+         return response.generatedImages?.[0]?.image?.imageBytes;
+      } else {
+         const imageConfig: any = { aspectRatio: aspectRatio };
+         if (model === 'gemini-3-pro-image-preview') {
+             imageConfig.imageSize = '2K';
+         }
+         const response = await ai.models.generateContent({ 
+            model: model, 
+            contents: { parts: parts },
+            config: { imageConfig }
+         });
+         return response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+      }
+    }
+  }, [key4uConfig, getAiInstance]);
 
   useEffect(() => {
     if (tableData.length > 0) {
@@ -391,6 +522,7 @@ export default function App() {
             }
 
             if (key4uConfig.enabled && key4uConfig.apiKey) {
+                showToast(`Đang phân tích kịch bản bằng Key4U...`, 'info');
                 const systemInstruction = `Bạn là một chuyên gia kịch bản. Chuyển kịch bản thành mảng JSON chứa các object (Scene). Mỗi object có các trường: "stt" (chuỗi), "ngonNguGoc" (chuỗi), "tiengViet" (chuỗi), "tomTat" (chuỗi), "prompt" (chuỗi).
 QUY TẮC PHÂN CẢNH: ${segmentationInstruction}
 NGÔN NGỮ GỐC: Giữ nguyên văn bản gốc của kịch bản đã upload, chỉ thực hiện phân đoạn theo yêu cầu, tuyệt đối không tóm tắt hay thay đổi từ ngữ.
@@ -425,6 +557,7 @@ LƯU Ý: Chỉ trả về mảng JSON hợp lệ, không thêm văn bản thừa
                     };
                 });
             } else {
+                showToast(`Đang phân tích kịch bản bằng Gemini...`, 'info');
                 const { ai } = getAiInstance(keyIdx);
                 const systemInstruction = `Bạn là một chuyên gia kịch bản. Chuyển kịch bản thành bảng phân cảnh 5 cột Markdown: STT, Ngôn ngữ gốc, Tiếng Việt, Tóm tắt, Prompt tiếng Anh chi tiết.
 QUY TẮC PHÂN CẢNH: ${segmentationInstruction}
@@ -491,38 +624,14 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
         characters: currentChars, defaultCharacterIndices: currentDef, adjustments 
       });
       
-      const { ai } = getAiInstance(keyIdx);
       let generatedBase64: string | undefined;
 
-      if (selectedImageModel.includes('imagen')) {
-         // Imagen Model
-         const response = await ai.models.generateImages({
-            model: selectedImageModel,
-            prompt: prompt,
-            config: {
-                numberOfImages: 1,
-                aspectRatio: currentRatio, 
-                outputMimeType: 'image/jpeg'
-            }
-         });
-         generatedBase64 = response.generatedImages?.[0]?.image?.imageBytes;
+      if (key4uConfig.enabled && key4uConfig.apiKey) {
+          showToast(`Đang tạo ảnh bằng Key4U...`, 'info');
+          generatedBase64 = await generateImageUnified(selectedImageModel, prompt, parts, currentRatio, keyIdx);
       } else {
-         // Gemini Models
-         const imageConfig: any = {
-             aspectRatio: currentRatio 
-         };
-         if (selectedImageModel === 'gemini-3-pro-image-preview') {
-             imageConfig.imageSize = '2K';
-         }
-
-         const response = await ai.models.generateContent({ 
-            model: selectedImageModel, 
-            contents: { parts: parts },
-            config: {
-                imageConfig
-            }
-         });
-         generatedBase64 = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+          showToast(`Đang tạo ảnh bằng Gemini...`, 'info');
+          generatedBase64 = await generateImageUnified(selectedImageModel, prompt, parts, currentRatio, keyIdx);
       }
       
       if (generatedBase64) {
@@ -556,7 +665,7 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
       setTableData(prev => prev.map(r => r.id === rowId ? { ...r, error: `Lỗi: ${finalError}`, isGenerating: false } : r));
       showToast(`Lỗi tạo ảnh (Row ${rowId}): ${finalError}`, 'error');
     }
-  }, [getAiInstance, selectedImageModel, showToast]);
+  }, [getAiInstance, selectedImageModel, showToast, key4uConfig, generateImageUnified]);
 
   const handleGenerateAllImages = useCallback(async (isRegenerate: boolean = false) => {
     // Nếu isRegenerate là true, lấy tất cả các dòng chưa đang xử lý
@@ -600,7 +709,6 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
 
     setTableData(prevData => prevData.map(r => r.id === rowId ? { ...r, isGeneratingPrompt: true, error: null, videoPrompt: '' } : r));
     try {
-        const { ai } = getAiInstance(keyIdx);
         const parts: any[] = [];
         const baseInstruction = `Hãy viết Prompt Video tiếng Anh dài 300 chữ mô tả chuyển động camera 8 giây. ${videoPromptNote}\n\nYÊU CẦU BẮT BUỘC: Chỉ trả về duy nhất đoạn text tiếng Anh chứa nội dung prompt, VIẾT LIỀN MẠCH THÀNH 1 DÒNG (One-line), KHÔNG XUỐNG DÒNG. Tuyệt đối KHÔNG bao gồm bất kỳ lời dẫn, giải thích, tiêu đề (ví dụ: "Here is the prompt", "Video Prompt:") hay định dạng markdown nào.`;
 
@@ -613,12 +721,15 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
             parts.push({ text: `Dựa trên mô tả hình ảnh: "${textPromptToUse}"\n\nKịch bản: "${row.originalRow[2]}"\n\n${baseInstruction}` });
         }
 
-        const responseStream = await ai.models.generateContentStream({ model: selectedModel, contents: { parts } });
-        for await (const chunk of responseStream) {
-            // Force replace newlines in the incoming stream chunk
-            const cleanChunk = (chunk.text || '').replace(/[\r\n]+/g, ' ');
-            setTableData(prevData => prevData.map(r => r.id === rowId ? { ...r, videoPrompt: ((r.videoPrompt || '') + cleanChunk).replace(/[\r\n]+/g, ' ') } : r));
+        if (key4uConfig.enabled && key4uConfig.apiKey) {
+            showToast(`Đang tạo prompt video bằng Key4U...`, 'info');
+        } else {
+            showToast(`Đang tạo prompt video bằng Gemini...`, 'info');
         }
+
+        const responseText = await generateContentUnified(selectedModel, '', parts, keyIdx);
+        const cleanChunk = (responseText || '').replace(/[\r\n]+/g, ' ');
+        setTableData(prevData => prevData.map(r => r.id === rowId ? { ...r, videoPrompt: cleanChunk } : r));
     } catch (err: any) {
         const { keyCount } = getAiInstance();
         if (err.message.includes('429') && keyIdx < keyCount - 1) {
@@ -627,7 +738,19 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
         handleUpdateRow({ ...tableData.find(r => r.id === rowId)!, error: `Lỗi: ${err.message}` });
         showToast(`Lỗi tạo prompt video: ${err.message}`, 'error');
     } finally { setTableData(prevData => prevData.map(r => r.id === rowId ? { ...r, isGeneratingPrompt: false } : r)); }
-  }, [tableData, handleUpdateRow, videoPromptNote, getAiInstance, selectedModel, showToast]);
+  }, [tableData, handleUpdateRow, videoPromptNote, getAiInstance, selectedModel, showToast, key4uConfig, generateContentUnified]);
+
+  const handleCreateImagePromptForRow = useCallback((rowId: number) => {
+    if (!selectedStyle) return;
+    setTableData(prevData => prevData.map(row => {
+        if (row.id === rowId) {
+            const finalPrompt = getPromptForRow(row, selectedStyle, characters);
+            return { ...row, imagePrompt: finalPrompt };
+        }
+        return row;
+    }));
+    showToast('Đã tạo lại prompt ảnh cho dòng này.', 'success');
+  }, [selectedStyle, characters, showToast]);
 
   // Tạo hàng loạt prompt ảnh cuối cùng (Image Prompt)
   const handleCreateAllImagePrompts = useCallback(() => {
@@ -696,19 +819,54 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
     if (keyIdx === 0) setChatMessages(updatedMessages);
     setIsAiReplying(true);
     try {
-        const { ai } = getAiInstance(keyIdx);
-        const history = updatedMessages.slice(0, -1).map(msg => ({ role: msg.role, parts: [{ text: msg.content }] }));
-        const chat = ai.chats.create({ model: selectedModel, history: history });
-        const responseStream = await chat.sendMessageStream({ message: prompt });
-        let fullResponse = '';
-        if (keyIdx === 0) setChatMessages(prev => [...prev, { role: 'model', content: '' }]);
-        for await (const chunk of responseStream) {
-            fullResponse += chunk.text || '';
-            setChatMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1].content = fullResponse;
-                return newMessages;
+        if (key4uConfig.enabled && key4uConfig.apiKey) {
+            let endpoint = key4uConfig.baseUrl || 'https://api.key4u.shop/v1/chat/completions';
+            if (!endpoint.endsWith('/chat/completions')) {
+                endpoint = endpoint.replace(/\/+$/, '');
+                if (!endpoint.endsWith('/v1')) {
+                    endpoint += '/v1';
+                }
+                endpoint += '/chat/completions';
+            }
+            const messages = updatedMessages.map(msg => ({
+                role: msg.role === 'model' ? 'assistant' : 'user',
+                content: msg.content
+            }));
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key4uConfig.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: selectedModel,
+                    messages: messages,
+                    temperature: 0.7
+                })
             });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error?.message || `HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const fullResponse = data.choices[0].message.content;
+            setChatMessages(prev => [...prev, { role: 'model', content: fullResponse }]);
+        } else {
+            const { ai } = getAiInstance(keyIdx);
+            const history = updatedMessages.slice(0, -1).map(msg => ({ role: msg.role, parts: [{ text: msg.content }] }));
+            const chat = ai.chats.create({ model: selectedModel, history: history });
+            const responseStream = await chat.sendMessageStream({ message: prompt });
+            let fullResponse = '';
+            if (keyIdx === 0) setChatMessages(prev => [...prev, { role: 'model', content: '' }]);
+            for await (const chunk of responseStream) {
+                fullResponse += chunk.text || '';
+                setChatMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].content = fullResponse;
+                    return newMessages;
+                });
+            }
         }
     } catch (err: any) {
         const { keyCount } = getAiInstance();
@@ -817,10 +975,7 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
               tableData={tableData}
               selectedModel={selectedModel}
               onAutoFillRows={handleAutoFillCharacters}
-              getAiInstance={(idx = 0) => { 
-                  const { ai } = getAiInstance(idx); 
-                  return { ai, rotate: () => {} }; 
-              }}
+              generateContentUnified={generateContentUnified}
               onViewImage={setPreviewImageUrl}
               showToast={showToast}
             />
@@ -837,6 +992,7 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
                 onGenerateVideoPrompt={generateVideoPromptForRow} 
                 onGenerateAllVideoPrompts={() => tableData.forEach(r => generateVideoPromptForRow(r.id))}
                 onGenerateAllContextPrompts={handleCreateAllImagePrompts}
+                onGenerateImagePrompt={handleCreateImagePromptForRow}
                 onDownloadAll={handleDownloadAllAssets} 
                 onViewImage={(imageUrl, rowId) => setViewingImage({ imageUrl, rowId })} 
                 onStartRemake={setRemakingRow} 
@@ -901,7 +1057,7 @@ LƯU Ý: Không thêm văn bản thừa ngoài bảng Markdown.`;
         }} 
       />
 
-      <ChatModal isOpen={chatState === 'open'} onClose={() => setChatState('closed')} onMinimize={() => setChatState('minimized')} messages={chatMessages} onSendMessage={handleSendMessageToAI} isAiReplying={isAiReplying} onPresentScript={() => {}} />
+      <ChatModal isOpen={chatState === 'open'} onClose={() => setChatState('closed')} onMinimize={() => setChatState('minimized')} messages={chatMessages} onSendMessage={handleSendMessageToAI} isAiReplying={isAiReplying} onPresentScript={() => {}} generateContentUnified={generateContentUnified} />
       <PromoPopup />
     </>
   );

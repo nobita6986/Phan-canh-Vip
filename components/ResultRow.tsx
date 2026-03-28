@@ -12,6 +12,7 @@ interface ResultRowProps {
   onUpdateRow: (row: TableRowData) => void;
   onGenerateImage: (rowId: number) => void;
   onGenerateVideoPrompt: (rowId: number) => void;
+  onGenerateImagePrompt: (rowId: number) => void;
   onStartRemake: (row: TableRowData) => void;
   selectedStyle: Style;
   onViewImage: (imageUrl: string, rowId: number) => void;
@@ -75,7 +76,7 @@ const CharacterSelector: React.FC<{
     );
 };
 
-export const ResultRow: React.FC<ResultRowProps> = ({ rowData, characters, onUpdateRow, onGenerateImage, selectedStyle, onViewImage, onStartRemake, onOpenHistory, onSendToVideo, onGenerateVideoPrompt, defaultCharacterIndex, showContextPrompt }) => {
+export const ResultRow: React.FC<ResultRowProps> = ({ rowData, characters, onUpdateRow, onGenerateImage, selectedStyle, onViewImage, onStartRemake, onOpenHistory, onSendToVideo, onGenerateVideoPrompt, onGenerateImagePrompt, defaultCharacterIndex, showContextPrompt }) => {
   const mainIndex = rowData.mainImageIndex > -1 ? rowData.mainImageIndex : (rowData.generatedImages.length > 0 ? rowData.generatedImages.length - 1 : -1);
   const mainAsset = mainIndex !== -1 ? rowData.generatedImages[mainIndex] : null;
 
@@ -129,13 +130,20 @@ export const ResultRow: React.FC<ResultRowProps> = ({ rowData, characters, onUpd
       )}
 
       {/* Prompt Image (Final) */}
-      <td className="p-2 align-top w-56 min-w-[224px]">
+      <td className="p-2 align-top w-56 min-w-[224px] relative group/prompt">
         <textarea
           className={`${textAreaClass} text-gray-700 dark:text-gray-200 bg-teal-50/30 dark:bg-teal-900/10 border-teal-100 dark:border-teal-900/30 font-medium`}
           value={rowData.imagePrompt || ''}
           onChange={(e) => onUpdateRow({ ...rowData, imagePrompt: e.target.value })}
           placeholder="Nhấn 'Tạo tất cả prompt ảnh' để tự động điền hoặc nhập thủ công..."
         />
+        <button
+            onClick={() => onGenerateImagePrompt(rowData.id)}
+            className="absolute top-4 right-4 p-1.5 bg-white/80 dark:bg-black/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-600 dark:text-teal-400 rounded-md opacity-0 group-hover/prompt:opacity-100 transition-opacity shadow-sm border border-teal-200 dark:border-teal-800"
+            title="Tạo lại prompt ảnh cho dòng này"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
       </td>
 
       {/* Prompt Video */}
